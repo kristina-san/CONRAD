@@ -1,0 +1,40 @@
+!SESSION 2015-07-03 13:02:55.395 -----------------------------------------------
+eclipse.buildId=4.4.2.M20150204-1700
+java.version=1.7.0_51
+java.vendor=Oracle Corporation
+BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en_US
+Framework arguments:  -product org.eclipse.epp.package.java.product
+Command-line arguments:  -data /proj/ciptmp/FCRSS15/SawinskyKr/CONRAD -os linux -ws gtk -arch x86_64 -product org.eclipse.epp.package.java.product
+
+!ENTRY org.eclipse.jface 2 0 2015-07-03 13:03:04.766
+!MESSAGE Keybinding conflicts occurred.  They may interfere with normal accelerator operation.
+!SUBENTRY 1 org.eclipse.jface 2 0 2015-07-03 13:03:04.766
+!MESSAGE A conflict occurred for ALT+CTRL+U:
+Binding(ALT+CTRL+U,
+	ParameterizedCommand(Command(de.innot.avreclipse.commands.uploadproject,Upload Project,
+		Upload selected project to the target device,
+		Category(de.innot.avreclipse.commands,AVR,AVR Plugin commands,true),
+		org.eclipse.ui.internal.WorkbenchHandlerServiceHandler@23f90602,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+Binding(ALT+CTRL+U,
+	ParameterizedCommand(Command(org.eclipse.team.svn.ui.command.UpdateCommand,Update,
+		,
+		Category(org.eclipse.team.svn.ui.command.category,SVN,null,true),
+		org.eclipse.ui.internal.WorkbenchHandlerServiceHandler@73327188,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+
+!ENTRY org.eclipse.core.net 1 0 2015-07-03 13:03:05.781
+!MESSAGE System property http.proxyHost is set to wwwproxy.informatik.uni-erlangen.de but should not be set.
+
+!ENTRY org.eclipse.core.net 1 0 2015-07-03 13:03:05.783
+!MESSAGE System property http.proxyPort is set to 8080 but should not be set.
+
+!ENTRY org.eclipse.core.net 1 0 2015-07-03 13:03:05.797
+!MESSAGE System property http.proxyHost is set to wwwproxy.informatik.uni-erlangen.de but should not be set.
+
+!ENTRY org.eclipse.core.net 1 0 2015-07-03 13:03:05.799
+!MESSAGE System property http.proxyPort is set to 8080 but should not be set.
