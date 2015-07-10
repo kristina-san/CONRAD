@@ -15,6 +15,7 @@ import edu.stanford.rsl.conrad.data.numeric.opencl.OpenCLGrid2D;
 import edu.stanford.rsl.conrad.opencl.OpenCLUtil;
 
 import com.jogamp.opencl.CLBuffer;
+import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLImage2d;
@@ -43,7 +44,10 @@ public class OpenCL extends OpenCLGrid2D {
 				p.setAtIndex(i, j, 15);
 			}
 		}
+//		OpenCL pCL = new OpenCL(p, context, device);
+//		pCL.show("grid1");
 		OpenCL pCL = new OpenCL(p, context, device);
+		pCL.show("grid1");
 		return pCL;
 	}
 	
@@ -62,6 +66,7 @@ public class OpenCL extends OpenCLGrid2D {
 			}
 		}
 		OpenCL pCL = new OpenCL(p, context, device);
+		pCL.show("grid2");
 		return pCL;
 	}
 	
@@ -104,38 +109,67 @@ public class OpenCL extends OpenCLGrid2D {
 			e.printStackTrace();
 			System.exit(-1);
 		}
-
-//		int imageSize = this.getSize()[0] * this.getSize()[1];
-//		CLImageFormat format = new CLImageFormat(ChannelOrder.INTENSITY, ChannelType.FLOAT);
-//		CLBuffer<FloatBuffer> imageBuffer = context.createFloatBuffer(imageSize, Mem.READ_ONLY);
-//		for (int i=0;i<this.getBuffer().length;++i){
-//			imageBuffer.getBuffer().put(this.getBuffer()[i]);
-//		}
-//		imageBuffer.getBuffer().rewind();
-//		CLImage2d<FloatBuffer> imageGrid = context.createImage2d(
-//				imageBuffer.getBuffer(), this.getSize()[0], this.getSize()[1], format);
-//		imageBuffer.release();
-//		
-//		// create memory for result grid
-//		CLBuffer<FloatBuffer> resultGrid = context.createFloatBuffer(size*size, Mem.WRITE_ONLY);
-//		
-//		// copy params
-//		CLKernel kernel = program.createCLKernel("AddTwoOpenCLGrid2Ds");
-//		kernel.putArg(resultGrid).putArg(resultGrid)
-//			.putArg((float)maxT).putArg((float)deltaT)
-//			.putArg((float)maxBeta).putArg((float)deltaBeta)
-//			.putArg((float)focalLength).putArg(maxTIndex).putArg(maxBetaIndex);
+		int gridSizeX = size;
+		int gridSizeY = size;
 		
-//		float[] argument = value.getAsFloatArray();
-//		CLBuffer<FloatBuffer> argBuffer = device.getContext().createFloatBuffer(argument.length, Mem.READ_ONLY);
-//		argBuffer.getBuffer().put(argument);
-//		argBuffer.getBuffer().rewind();
-//		kernel.putArgs(clmem).putArg(argBuffer).putArg(elementCount);
+		int imageSize = this.getSize()[0] * this.getSize()[1];
+		
+		CLImageFormat format = new CLImageFormat(ChannelOrder.INTENSITY, ChannelType.FLOAT);
+		
+		CLBuffer<FloatBuffer> imageBuffer = context.createFloatBuffer(imageSize, Mem.READ_ONLY);
+		for (int i=0;i<this.getBuffer().length;++i){
+			imageBuffer.getBuffer().put(this.getBuffer()[i]);
+		}
+		imageBuffer.getBuffer().rewind();
+		CLImage2d<FloatBuffer> imageGrid1 = context.createImage2d(
+				imageBuffer.getBuffer(), this.getSize()[0], this.getSize()[1], format);
+		//imageBuffer.release();
+		
+		CLBuffer<FloatBuffer> imageBuffer2 = context.createFloatBuffer(imageSize, Mem.READ_ONLY);
+		for (int i=0;i<this.getBuffer().length;++i){
+			imageBuffer2.getBuffer().put(grid2.getBuffer()[i]);
+		}
+		imageBuffer2.getBuffer().rewind();
+		CLImage2d<FloatBuffer> imageGrid2 = context.createImage2d(
+				imageBuffer2.getBuffer(), grid2.getSize()[0], grid2.getSize()[1], format);
+		//imageBuffer2.release();
+
+		// create memory for result grid
+		CLBuffer<FloatBuffer> resultGrid = context.createFloatBuffer(imageSize, Mem.WRITE_ONLY);
+		
+		// copy params
+		CLKernel kernel = program.createCLKernel("AddOpenCLGrid2D");
+		kernel.putArg(resultGrid).putArg(imageBuffer).putArg(imageBuffer2)
+			.putArg(gridSizeX).putArg(gridSizeY);
+
+		
+		// createCommandQueue
+		CLCommandQueue queue = device.createCommandQueue();
+		queue
+			//.putWriteImage(imageGrid1, true)
+			//.putWriteImage(imageGrid2, true)
+			.putWriteBuffer(resultGrid, true)
+			.putWriteBuffer(imageBuffer, true)
+			.putWriteBuffer(imageBuffer2, true)
+			.put2DRangeKernel(kernel, 0, 0,(long)gridSizeX,(long)gridSizeY,1, 1)
+			.finish()
+			.putReadBuffer(resultGrid, true)
+			.finish();
+		
+		// write resultGrid back to grid2D
+		Grid2D result = new Grid2D(size,size);
+		result.setSpacing(0.1, 0.1);
+		resultGrid.getBuffer().rewind();
+		for (int i = 0; i < result.getBuffer().length; ++i) {
+			result.getBuffer()[i] = resultGrid.getBuffer().get();
+		}
+		result.show("addedPicture");
+		System.out.println("End");
 	}
 	
 	
 	public static void main(String[] args) {
-		//new ImageJ();
+		new ImageJ();
 		
 		CLContext context = OpenCLUtil.createContext();
 		CLDevice[] devices = context.getDevices();
@@ -144,9 +178,9 @@ public class OpenCL extends OpenCLGrid2D {
 		// Exercise Sheet 4 - 1.		
 		int size = 256;
 		PhantomK p = new PhantomK(size);
-		p.show();
+		p.show("PhantomK");
 		OpenCL phantomCL = new OpenCL(p, context, device);
-		phantomCL.show();
+		phantomCL.show("PhantomCL");
 		AddPhantomToCPUandGPU(p, phantomCL);
 		
 		OpenCL grid1 = createGrid1(size, context, device);
@@ -155,5 +189,11 @@ public class OpenCL extends OpenCLGrid2D {
 		// Exercise Sheet 4 - 2.
 		grid1.AddTwoOpenCLGrid2Ds(grid2, context, device, size);
 		
+		// Exercise Sheet 4 - 3.
+		
+		
 	}
 }
+
+
+

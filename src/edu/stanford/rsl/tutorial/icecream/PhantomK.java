@@ -184,7 +184,7 @@ public class PhantomK extends Grid2D {
 
 	public Grid2D rebinning(Grid2D fanogram, float dSI, float dSD, int rotAngle, float detectorSpacing) {
 
-		Grid2D sinogram = new Grid2D(fanogram.getHeight(), fanogram.getWidth());
+		Grid2D sinogram = new Grid2D(fanogram.getHeight(), fanogram.getWidth()); // same sized fano and sinogram
 		float numberProj = fanogram.getHeight();
 		float numberDetPixel = fanogram.getWidth();
 		
@@ -202,19 +202,26 @@ public class PhantomK extends Grid2D {
 		for (int theta = 0; theta < sinogram.getWidth(); theta++) {
 			for (int s = 0; s < sinogram.getHeight(); s++) {
 				
-				double alpha = (2 * Math.PI / (numberProj)) * theta;
+//				double alpha = (2 * Math.PI / (numberProj)) * theta;
+				double thetaRad = theta/180*Math.PI;
 				double r = s * detectorSpacing;
 				double t = Math.asin(r/dSD);
-				double beta = Math.abs(alpha - t);
+				double beta = thetaRad - t;
 				
-				double ydet = - (numberDetPixel * detectorSpacing) / 2 + t* detectorSpacing;
-				double tvalue = Math.atan(sinogram.getHeight()/dSD);
-				double betavalue = beta*rotAngle;
+				System.out.println(beta/Math.PI*180 + " - " + t);
 				
-				t=t/tvalue;
-				beta=beta/rotAngle;
+				if (beta<0){
+					beta = beta + 2*Math.PI;
+				}
 				
-				sinogram.addAtIndex(theta, s, InterpolationOperators.interpolateLinear(fanogram, t, beta));
+//				double ydet = - (numberDetPixel * detectorSpacing) / 2 + t* detectorSpacing;
+//				double tvalue = Math.atan(sinogram.getHeight()/dSD);
+//				double betavalue = beta*rotAngle;
+//				
+//				t=t/tvalue;
+//				beta=beta/rotAngle;
+				//System.out.println(beta/Math.PI*180);
+				sinogram.addAtIndex(theta, s, InterpolationOperators.interpolateLinear(fanogram, t, beta/Math.PI*180));
 			}
 		}
 		
@@ -241,12 +248,12 @@ public class PhantomK extends Grid2D {
 //		float dSD = d/2;
 		float dSI = 3*d;
 		float dSD = 6*d;
-		int rotAngle = 1;
+		int rotAngleSpacing = 1;
 		//p.createSinogram(180, detectorSpacing, (int)((int)d/detectorSpacing), d/2 );
 		// p.createSinogram(180, (float)1.2, 500, d);
-		Grid2D fanogram  = p.createFanogram(360, detectorSpacing, (int) ((int) d / detectorSpacing), dSD, rotAngle, dSI);
+		Grid2D fanogram  = p.createFanogram(360, detectorSpacing, (int) ((int) d / detectorSpacing), dSD, rotAngleSpacing, dSI);
 		
-		Grid2D sinogrammFromFanogramm  = p.rebinning(fanogram, dSI, dSD, rotAngle, detectorSpacing);
+		Grid2D sinogrammFromFanogramm  = p.rebinning(fanogram, dSI, dSD, rotAngleSpacing, detectorSpacing);
 		
 		// Ex 3.3 FBP
 		/*PBP projection = new PBP();
