@@ -44,8 +44,6 @@ public class OpenCL extends OpenCLGrid2D {
 				p.setAtIndex(i, j, 15);
 			}
 		}
-//		OpenCL pCL = new OpenCL(p, context, device);
-//		pCL.show("grid1");
 		OpenCL pCL = new OpenCL(p, context, device);
 		pCL.show("grid1");
 		return pCL;
@@ -109,6 +107,7 @@ public class OpenCL extends OpenCLGrid2D {
 			e.printStackTrace();
 			System.exit(-1);
 		}
+		
 		int gridSizeX = size;
 		int gridSizeY = size;
 		
@@ -123,7 +122,6 @@ public class OpenCL extends OpenCLGrid2D {
 		imageBuffer.getBuffer().rewind();
 		CLImage2d<FloatBuffer> imageGrid1 = context.createImage2d(
 				imageBuffer.getBuffer(), this.getSize()[0], this.getSize()[1], format);
-		//imageBuffer.release();
 		
 		CLBuffer<FloatBuffer> imageBuffer2 = context.createFloatBuffer(imageSize, Mem.READ_ONLY);
 		for (int i=0;i<this.getBuffer().length;++i){
@@ -132,7 +130,6 @@ public class OpenCL extends OpenCLGrid2D {
 		imageBuffer2.getBuffer().rewind();
 		CLImage2d<FloatBuffer> imageGrid2 = context.createImage2d(
 				imageBuffer2.getBuffer(), grid2.getSize()[0], grid2.getSize()[1], format);
-		//imageBuffer2.release();
 
 		// create memory for result grid
 		CLBuffer<FloatBuffer> resultGrid = context.createFloatBuffer(imageSize, Mem.WRITE_ONLY);
@@ -141,7 +138,6 @@ public class OpenCL extends OpenCLGrid2D {
 		CLKernel kernel = program.createCLKernel("AddOpenCLGrid2D");
 		kernel.putArg(resultGrid).putArg(imageBuffer).putArg(imageBuffer2)
 			.putArg(gridSizeX).putArg(gridSizeY);
-
 		
 		// createCommandQueue
 		CLCommandQueue queue = device.createCommandQueue();
@@ -165,8 +161,68 @@ public class OpenCL extends OpenCLGrid2D {
 		}
 		result.show("addedPicture");
 		System.out.println("End");
+		
+		imageBuffer.release();
+		imageBuffer2.release();
 	}
 	
+	public void OpenCLBackProjection(CLContext context, CLDevice device, 
+			int numberProj, float detectorSpacing, int numberDetPixel, int sizeRecon, float pixelSpacingRecon[]) 
+	{
+		//this. is the sinogram in OpenCL that has to be reconstructed
+		CLProgram program = null;
+		try {
+			program = context.createProgram(this.getClass().getResourceAsStream("OpenCL_BP.cl"))
+					.build();
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+		
+		int gridReconSizeX = sizeRecon;
+		int gridReconSizeY = sizeRecon;
+		int imageSize = gridReconSizeX * gridReconSizeY;
+		
+		CLImageFormat format = new CLImageFormat(ChannelOrder.INTENSITY, ChannelType.FLOAT);
+		
+		// create memory for result backprojection grid
+		CLBuffer<FloatBuffer> resultBPGrid = context.createFloatBuffer(imageSize, Mem.WRITE_ONLY);
+		
+		// create buffer for sinogram
+		CLBuffer<FloatBuffer> sinoBuffer = context.createFloatBuffer(this.getHeight() * this.getWidth(), Mem.READ_ONLY);
+		for (int i=0;i<this.getBuffer().length;++i){
+			sinoBuffer.getBuffer().put(this.getBuffer()[i]);
+		}
+		sinoBuffer.getBuffer().rewind();
+
+		// copy params
+		CLKernel kernel = program.createCLKernel("OpenCL_BP");
+		kernel.putArg(resultBPGrid).putArg(sinoBuffer)
+			.putArg(numberProj).putArg(detectorSpacing).putArg(numberDetPixel).putArg(sizeRecon).putArg(pixelSpacingRecon[0]).putArg(pixelSpacingRecon[1]);
+		
+		// createCommandQueue
+		CLCommandQueue queue = device.createCommandQueue();
+		queue
+			//.putWriteImage(imageGrid1, true)
+			//.putWriteImage(imageGrid2, true)
+			.putWriteBuffer(resultBPGrid, true)
+			.putWriteBuffer(sinoBuffer, true)
+			.put2DRangeKernel(kernel, 0, 0,(long)gridReconSizeX,(long)gridReconSizeY,1, 1)
+			//.put2DRangeKernel(kernel, 0, 0, globalWorkSizeBeta, globalWorkSizeT, localWorkSize, localWorkSize)  maybe add this worksize?
+			.finish()
+			.putReadBuffer(resultBPGrid, true)
+			.finish();
+		
+		// write resultGrid back to grid2D
+		Grid2D result = new Grid2D(sizeRecon, sizeRecon);
+		result.setSpacing(0.1, 0.1);
+		resultBPGrid.getBuffer().rewind();
+		for (int i = 0; i < result.getBuffer().length; ++i) {
+			result.getBuffer()[i] = resultBPGrid.getBuffer().get();
+		}
+		result.show("Backprojection");
+		
+	}
 	
 	public static void main(String[] args) {
 		new ImageJ();
@@ -191,6 +247,27 @@ public class OpenCL extends OpenCLGrid2D {
 		
 		// Exercise Sheet 4 - 3.
 		
+		// for creating a sinogram from class PhantomK
+		p.setSpacing(0.1, 0.1);
+		p.setOrigin(-(size - 1) * p.getSpacing()[0] / 2, -(size - 1) * p.getSpacing()[1]/ 2);
+		float d = (float) (Math.sqrt(2) * p.getHeight() * p.getSpacing()[0]);
+		float detectorSpacing = (float) 0.1;
+		Grid2D sinogram = p.createSinogram(180, detectorSpacing, (int)((int)d/detectorSpacing), d/2 );
+		sinogram.setSpacing(360/sinogram.getSize()[0], detectorSpacing);
+		sinogram.setOrigin(-(sinogram.getSize()[0]-1)*sinogram.getSpacing()[0]/2, -(sinogram.getSize()[1]-1)*sinogram.getSpacing()[1]/2 );
+		float [] pixelSpacingRecon = {(float) 0.2, (float) 0.2};
+		int numberProj = 360;
+		int numberDetPixel = (int) ((int) d/detectorSpacing);
+		
+		OpenCL sinogramCL = new OpenCL(sinogram, context, device);
+
+		long starttime= System.nanoTime();
+		
+		sinogramCL.OpenCLBackProjection(context, device, numberProj, detectorSpacing, numberDetPixel, size, pixelSpacingRecon);
+	
+		long endtime= System.nanoTime();
+		
+		System.out.println("Time on GPU for PBP " + (endtime - starttime));		
 		
 	}
 }

@@ -7,33 +7,6 @@ __constant sampler_t linearSampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_C
 
 // OpenCL kernel for adding two OpenCLGrid2D to each other
 
-//kernel void AddOpenCLGrid2D(
-//	global float* resultGrid,
-//	global image2d_t grid1,
-//	global image2d_t grid2,
-//	int gridSizeX,
-//	int gridSizeY) 
-//{
-//	const unsigned int x = get_global_id(0);// x index
-//	const unsigned int y = get_global_id(1);// y index
-	
-	//check if inside image boundaries
-//	if ( x>= gridSizeX || y >= gridSizeY)
-//		return;
-
-//	for (int idx = 0; idx <= gridSizeX; idx++)
-//	{
-//		for (int idy = 0; idy <= gridSizeY; idy++)
-//		{
-//			float2 xy = {idx, idy};
-//			float grid1val = read_imagef(grid1, linearSampler, xy).x;
-//			float grid2val = read_imagef(grid2, linearSampler, xy).x;
-//			resultGrid[idx] = grid1val;
-//		}
-//	}
-//	return;
-//}
-
 kernel void AddOpenCLGrid2D(
 	__global float* resultGrid,
 	__global float* grid1,
