@@ -160,7 +160,6 @@ public class OpenCL extends OpenCLGrid2D {
 			result.getBuffer()[i] = resultGrid.getBuffer().get();
 		}
 		result.show("addedPicture");
-		System.out.println("End");
 		
 		imageBuffer.release();
 		imageBuffer2.release();
@@ -199,7 +198,7 @@ public class OpenCL extends OpenCLGrid2D {
 		CLKernel kernel = program.createCLKernel("OpenCL_BP");
 		kernel.putArg(resultBPGrid).putArg(sinoBuffer)
 			.putArg(numberProj).putArg(detectorSpacing).putArg(numberDetPixel).putArg(sizeRecon).putArg(pixelSpacingRecon[0]).putArg(pixelSpacingRecon[1]);
-		
+	
 		// createCommandQueue
 		CLCommandQueue queue = device.createCommandQueue();
 		queue
@@ -212,7 +211,7 @@ public class OpenCL extends OpenCLGrid2D {
 			.finish()
 			.putReadBuffer(resultBPGrid, true)
 			.finish();
-		
+;
 		// write resultGrid back to grid2D
 		Grid2D result = new Grid2D(sizeRecon, sizeRecon);
 		result.setSpacing(0.1, 0.1);
@@ -220,8 +219,7 @@ public class OpenCL extends OpenCLGrid2D {
 		for (int i = 0; i < result.getBuffer().length; ++i) {
 			result.getBuffer()[i] = resultBPGrid.getBuffer().get();
 		}
-		result.show("Backprojection");
-		
+		result.show("Backprojection");	
 	}
 	
 	public static void main(String[] args) {

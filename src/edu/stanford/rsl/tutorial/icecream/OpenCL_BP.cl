@@ -5,15 +5,14 @@
 
 __constant sampler_t linearSampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_LINEAR;
 
-public double[] indexToPhysical(double i, double j, float pixelSpacingRecon[], double origin []) {
-	return new double[] {
-		i * pixelSpacingRecon[0]+ origin[0],
-		j * pixelSpacingRecon[1] + origin[1]
-	};
-}
+//double[] indexToPhysical(double i, double j, float pixelSpacingRecon[], double origin []) {
+//	return new double[] {
+//		i * pixelSpacingRecon[0]+ origin[0],
+//		j * pixelSpacingRecon[1] + origin[1]
+//	};
+//}
 
 // OpenCL kernel for backprojecting a sinogram
-
 kernel void OpenCL_BP(
 	__global float* backProjectionPic,
 	__global float* sinogram,
@@ -26,20 +25,22 @@ kernel void OpenCL_BP(
 {
 	const unsigned int x = get_global_id(0);// x index
 	const unsigned int y = get_global_id(1);// y index
-	
+	const unsigned int idx = y*256 + x;
 	//check if inside image boundaries
 	if ( x > sizeReconPic || y > sizeReconPic)
 		return;
 	
 	for (int theta = 0; theta < numberProj; theta++)
 	{
-		double alpha =  ((2*Math.PI/(numberProj))*theta);
-		double[] id = indexToPhysical(x, y, pixelSpacingRecon, backProjection.getOrigin());
-		double s=id[0]*Math.cos(alpha)+ id[1]*Math.sin(alpha);
-		s = (s- sinogram.getOrigin()[1])/detectorSpacing;
-		float value = InterpolationOperators.interpolateLinear(sinogram, theta, s);
-		value = (float) (Math.PI*value/numberProj);
-		backProjectionPic[x][y] = value;
+//		double alpha =  ((2*Math.PI/(numberProj))*theta);
+//		double[] id = indexToPhysical(x, y, pixelSpacingRecon, backProjection.getOrigin());
+//		double s=id[0]*Math.cos(alpha)+ id[1]*Math.sin(alpha);
+//		s = (s- sinogram.getOrigin()[1])/detectorSpacing;
+//		float value = InterpolationOperators.interpolateLinear(sinogram, theta, s);
+//		value = (float) (Math.PI*value/numberProj);
+		float value = 100;
+		
+		backProjectionPic[idx] = value;
 	}
 	
 	return;
