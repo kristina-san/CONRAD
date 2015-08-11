@@ -165,7 +165,7 @@ public class OpenCL extends OpenCLGrid2D {
 		imageBuffer2.release();
 	}
 	
-	public void OpenCLBackProjection(CLContext context, CLDevice device, 
+	public void openCLBackProjection(CLContext context, CLDevice device, 
 			int numberProj, float detectorSpacing, int numberDetPixel, int sizeRecon, float pixelSpacingRecon[]) 
 	{
 		//this. is the sinogram in OpenCL that has to be reconstructed
@@ -193,11 +193,12 @@ public class OpenCL extends OpenCLGrid2D {
 			sinoBuffer.getBuffer().put(this.getBuffer()[i]);
 		}
 		sinoBuffer.getBuffer().rewind();
-
+		
 		// copy params
 		CLKernel kernel = program.createCLKernel("OpenCL_BP");
 		kernel.putArg(resultBPGrid).putArg(sinoBuffer)
-			.putArg(numberProj).putArg(detectorSpacing).putArg(numberDetPixel).putArg(sizeRecon).putArg(pixelSpacingRecon[0]).putArg(pixelSpacingRecon[1]);
+			.putArg(numberProj).putArg(detectorSpacing).putArg(numberDetPixel).putArg(sizeRecon).putArg(pixelSpacingRecon[0]).putArg(pixelSpacingRecon[1])
+			.putArg(this.getOrigin()[0]).putArg(this.getOrigin()[1]);
 	
 		// createCommandQueue
 		CLCommandQueue queue = device.createCommandQueue();
@@ -261,7 +262,7 @@ public class OpenCL extends OpenCLGrid2D {
 
 		long starttime= System.nanoTime();
 		
-		sinogramCL.OpenCLBackProjection(context, device, numberProj, detectorSpacing, numberDetPixel, size, pixelSpacingRecon);
+		sinogramCL.openCLBackProjection(context, device, numberProj, detectorSpacing, numberDetPixel, size, pixelSpacingRecon);
 	
 		long endtime= System.nanoTime();
 		
