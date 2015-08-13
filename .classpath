@@ -33,7 +33,7 @@
 	<classpathentry kind="lib" path="lib/jocl-natives-solaris-i586.jar"/>
 	<classpathentry kind="lib" path="lib/jocl-natives-windows-amd64.jar"/>
 	<classpathentry kind="lib" path="lib/jocl-natives-windows-i586.jar"/>
-	<classpathentry kind="lib" path="lib/jocl.jar"/>
+	<classpathentry kind="lib" path="lib/jocl.jar" sourcepath="lib/jocl-java-src.zip"/>
 	<classpathentry kind="lib" path="lib/jogl-all-natives-linux-amd64.jar"/>
 	<classpathentry kind="lib" path="lib/jogl-all-natives-linux-i586.jar"/>
 	<classpathentry kind="lib" path="lib/jogl-all-natives-macosx-universal.jar"/>

@@ -1,9 +1,16 @@
 package edu.stanford.rsl.tutorial.icecream;
 
 import edu.stanford.rsl.apps.gui.ReconstructionPipelineFrame;
+import edu.stanford.rsl.conrad.data.numeric.Grid2D;
 import edu.stanford.rsl.conrad.data.numeric.Grid3D;
+import edu.stanford.rsl.conrad.filtering.CosineWeightingTool;
+import edu.stanford.rsl.conrad.filtering.ImageFilteringTool;
+import edu.stanford.rsl.conrad.filtering.RampFilteringTool;
+import edu.stanford.rsl.conrad.filtering.rampfilters.HanningRampFilter;
 import edu.stanford.rsl.conrad.filtering.rampfilters.RamLakRampFilter;
 import edu.stanford.rsl.conrad.filtering.rampfilters.RampFilter;
+import edu.stanford.rsl.conrad.filtering.redundancy.ParkerWeightingTool;
+import edu.stanford.rsl.conrad.filtering.redundancy.TrajectoryParkerWeightingTool;
 import edu.stanford.rsl.conrad.opencl.OpenCLBackProjector;
 import edu.stanford.rsl.conrad.utils.CONRAD;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
@@ -47,28 +54,32 @@ public class CBR {
 		pipeLine.setVisible(true);
 		
 		// Exercise Sheet 5.3
-		/*double maxT = 248;
-		double fan = 10.0*Math.PI/180.0;
-		double focalLength = (maxT/2.0-0.5)/Math.tan(fan);
-
-		double deltaT = 1.d;
-			
-		for (int i = 0; i < 248; ++i)
+		ParkerWeightingTool p = new ParkerWeightingTool();
+		p.configure();
+		for(int i = 0; i < 248; i++)
 		{
-			double maxBeta =  (double)(i+1) * Math.PI * 2.0 / 360.0;
-			double deltaBeta = maxBeta / 180;
-					
-			ParkerWeights p = new ParkerWeights(focalLength, maxT, deltaT, maxBeta, deltaBeta);
-			grid.setSubGrid(i, p);	
-		}	
-		grid.show();*/
+			p.setImageIndex(i);
+			Grid2D parkerGrid = p.applyToolToImage(grid.getSubGrid(i));
+			grid.setSubGrid(i, parkerGrid);
+			
+		}
+		grid.show();
+		
 		
 		// Exercise Sheet 5.4
-		//RampFilter rFil = new RamLakRampFilter();
-		//ImagePlus rampFilterImp = rFil.getImagePlusFromRampFilter(1);
-		//rampFilterImp.show();
-		OpenCLBackProjector p = new OpenCLBackProjector();
-		p.reconstructOffline(imp);
+		CosineWeightingTool c = new CosineWeightingTool();
+		c.configure();
+		RampFilteringTool r = new RampFilteringTool();
+		RampFilter ramp = new HanningRampFilter();
+		ramp.configure();
+		r.setRamp(ramp);
+		OpenCLBackProjector o = new OpenCLBackProjector();
+		o.configure();
+		
+		ImageFilteringTool [] tools = {c, r, o};
+		Grid3D g = ImageUtil.applyFiltersInParallel(grid, tools);
+		g.show();
+
 		
 
 	}

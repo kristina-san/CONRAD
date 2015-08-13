@@ -68,33 +68,32 @@ public class OpenCL extends OpenCLGrid2D {
 		return pCL;
 	}
 	
-	public static void AddPhantomToCPUandGPU(PhantomK p, OpenCL phantomCL)
+	public static void AddPhantomToCPUandGPU(PhantomK p, OpenCL phantomCL, OpenCL addPhanCL)
 	{
-		int number = 1000;
-		
+		int number = 10000;
+		PhantomK addP = new PhantomK(256);		
 		long starttime= System.nanoTime();
-	
+
 		//on CPU
 		for (int i = 0; i < number; i++){
-            NumericPointwiseOperators.addBy(p, p);
+            NumericPointwiseOperators.addBy(addP, p);
         }
 		
 		long endtime = System.nanoTime();
 		long timecost = endtime - starttime;
 		
-		System.out.println("Time with CPU " + timecost);
-		
+		System.out.println("Time with CPU " + timecost/1000);
 		starttime= System.nanoTime();
-		
+
 		//openCL on GPU
 		for (int i = 0; i < number; i++){
-            NumericPointwiseOperators.addBy(phantomCL, phantomCL);
-        }
+            NumericPointwiseOperators.addBy(addPhanCL, phantomCL);
+		}
 		
 		endtime= System.nanoTime();
 		timecost= endtime - starttime; 
 		
-		System.out.println("Time on GPU " + timecost);
+		System.out.println("Time on GPU " + timecost/1000);
 	}
 	
 	public void AddTwoOpenCLGrid2Ds(OpenCL grid2, CLContext context, CLDevice device, int size )
@@ -198,7 +197,7 @@ public class OpenCL extends OpenCLGrid2D {
 		CLKernel kernel = program.createCLKernel("OpenCL_BP");
 		kernel.putArg(resultBPGrid).putArg(sinoBuffer)
 			.putArg(numberProj).putArg(detectorSpacing).putArg(numberDetPixel).putArg(sizeRecon).putArg(pixelSpacingRecon[0]).putArg(pixelSpacingRecon[1])
-			.putArg(this.getOrigin()[0]).putArg(this.getOrigin()[1]);
+			.putArg((float)this.getOrigin()[0]).putArg((float)this.getOrigin()[1]);
 	
 		// createCommandQueue
 		CLCommandQueue queue = device.createCommandQueue();
@@ -207,7 +206,7 @@ public class OpenCL extends OpenCLGrid2D {
 			//.putWriteImage(imageGrid2, true)
 			.putWriteBuffer(resultBPGrid, true)
 			.putWriteBuffer(sinoBuffer, true)
-			.put2DRangeKernel(kernel, 0, 0,(long)gridReconSizeX,(long)gridReconSizeY,1, 1)
+			.put2DRangeKernel(kernel, 0, 0,(long)gridReconSizeX,(long)gridReconSizeY,32,32)
 			//.put2DRangeKernel(kernel, 0, 0, globalWorkSizeBeta, globalWorkSizeT, localWorkSize, localWorkSize)  maybe add this worksize?
 			.finish()
 			.putReadBuffer(resultBPGrid, true)
@@ -233,15 +232,13 @@ public class OpenCL extends OpenCLGrid2D {
 		// Exercise Sheet 4 - 1.		
 		int size = 256;
 		PhantomK p = new PhantomK(size);
-		p.show("PhantomK");
 		OpenCL phantomCL = new OpenCL(p, context, device);
-		phantomCL.show("PhantomCL");
-		AddPhantomToCPUandGPU(p, phantomCL);
+		OpenCL addPhanCL = new OpenCL(p, context, device);
+		AddPhantomToCPUandGPU(p, phantomCL, addPhanCL);
 		
+		// Exercise Sheet 4 - 2.		
 		OpenCL grid1 = createGrid1(size, context, device);
 		OpenCL grid2 = createGrid2(size, context, device);
-
-		// Exercise Sheet 4 - 2.
 		grid1.AddTwoOpenCLGrid2Ds(grid2, context, device, size);
 		
 		// Exercise Sheet 4 - 3.
@@ -257,7 +254,7 @@ public class OpenCL extends OpenCLGrid2D {
 		float [] pixelSpacingRecon = {(float) 0.2, (float) 0.2};
 		int numberProj = 360;
 		int numberDetPixel = (int) ((int) d/detectorSpacing);
-		
+
 		OpenCL sinogramCL = new OpenCL(sinogram, context, device);
 
 		long starttime= System.nanoTime();
@@ -272,4 +269,7 @@ public class OpenCL extends OpenCLGrid2D {
 }
 
 
-
+//1. Aufaddieren hinbekommen
+//2. Backprojection fixen
+//3. Statt int interpolieren billinear
+//4. filtern reco und nix verschmiertes

@@ -223,6 +223,7 @@ public class PhantomK extends Grid2D {
 		float [] pixelSpacingRecon = {(float) 0.2, (float) 0.2};
 		Grid1DComplex ramLak = projection.RamLakFilter(detectorSpacing, sinogrammFromFanogramm);
 		Grid2D filteredRamLak = projection.filtering(sinogrammFromFanogramm, ramLak);
+		filteredRamLak.show("ramlak"); //funktioniert nicht richtig!!
 		Grid2D reconstructedFilterRamLak = projection.backProjection(360, detectorSpacing, (int) ((int) d/detectorSpacing), filteredRamLak, size, pixelSpacingRecon);
 
 		// Ex 3.4 Short scan
@@ -234,3 +235,5 @@ public class PhantomK extends Grid2D {
 	}
 
 }
+
+//Mittwoch 08:30

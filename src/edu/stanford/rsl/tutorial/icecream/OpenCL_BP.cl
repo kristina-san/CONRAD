@@ -16,12 +16,12 @@ kernel void OpenCL_BP(
 	int sizeReconPic,
 	float pixelSpacingReconX,
 	float pixelSpacingReconY,
-	double originX,
-	double originY) 
+	float originX,
+	float originY) 
 {
 	const unsigned int x = get_global_id(0);// x index
 	const unsigned int y = get_global_id(1);// y index
-	const unsigned int idx = y*256 + x;
+	const unsigned int idx = y*sizeReconPic + x;
 	
 	int locSizex = get_local_size(0);
 	int locSizey = get_local_size(1);
@@ -29,28 +29,37 @@ kernel void OpenCL_BP(
 	//check if inside image boundaries
 	if ( x > sizeReconPic || y > sizeReconPic)
 		return;
+		
+	//Set Origin from backProjection
+	float backProjOriginX = -(sizeReconPic-1)*pixelSpacingReconX/2;
+	float backProjOriginY = -(sizeReconPic-1)*pixelSpacingReconY/2;
 	
+	
+	float pval = 0.f;
 	for (int theta = 0; theta < numberProj; theta++)
 	{
-		double alpha =  ((360/(numberProj))*theta);
-		double indexX = x*pixelSpacingReconX + originX;
-		double indexY = y*pixelSpacingReconY + originY;
-		double s=indexX*cos(alpha)+ indexY*sin(alpha);
+		float alpha =  ((2.f*M_PI_F/(numberProj))*theta);
+		float indexX = x*pixelSpacingReconX + backProjOriginX;
+		float indexY = y*pixelSpacingReconY + backProjOriginY;
+		float s = indexX*cos(alpha) + indexY*sin(alpha);
 		s = (s - originY)/detectorSpacing;
-		int sinogramIndex = ((int)(theta*360+s));
+		int sinogramIndex = ((int)(theta*numberProj+s));
 		float value = sinogram[sinogramIndex];
-		value = 360*value/numberProj;
-//		float value = InterpolationOperators.interpolateLinear(sinogram, theta, s);
-//		value = (float) (Math.PI*value/numberProj);
-		float value2 = 50;
-		
-		backProjectionPic[idx] = value;
+		value = M_PI_F*value/numberProj;
+
+		pval += value;
 	}
 	
+	backProjectionPic[idx] = pval;
 	return;
 }
 
-
+//	public double[] indexToPhysical(double i, double j, float pixelSpacingRecon[], double origin []) {
+//		return new double[] {
+//				i * pixelSpacingRecon[0]+ origin[0],
+//				j * pixelSpacingRecon[1] + origin[1]
+//		};
+//	}
 
 //	public Grid2D backProjection(int numberProj, float detectorSpacing, int numberDetPixel, Grid2D sinogram, int sizeRecon, float pixelSpacingRecon[]){
 //		
