@@ -50,7 +50,7 @@ public class PBP {
 		filtered.setSpacing(sinogram.getSpacing());
 		filtered.setOrigin(sinogram.getOrigin());
 		for (int row =0; row < sinogram.getWidth(); row++){
-			Grid1DComplex rowS = new Grid1DComplex(sinogram.getWidth());
+			Grid1DComplex rowS = new Grid1DComplex(sinogram.getHeight());
 			for(int col = 0; col < sinogram.getHeight(); col++){
 				rowS.setAtIndex(col, sinogram.getPixelValue(row, col));
 			} 
@@ -127,7 +127,7 @@ public class PBP {
 		Grid2D filtered = object.filtering(sinogram, rampFilter);
 		filtered.show("filtered");
 		Grid2D filteredRamLak = object.filtering(sinogram, ramLak);
-		filtered.show("filteredRamLak");
+		filteredRamLak.show("filteredRamLak");
 		
 		Grid2D reconstructed = object.backProjection(360, detectorSpacing, (int) ((int) d/detectorSpacing), sinogram, size, pixelSpacingRecon);		
 		Grid2D reconstructedFilter = object.backProjection(360, detectorSpacing, (int) ((int) d/detectorSpacing), filtered, size, pixelSpacingRecon);

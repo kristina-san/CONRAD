@@ -48,7 +48,7 @@ kernel void OpenCL_BP(
 {
 	const unsigned int x = get_global_id(0);// x index
 	const unsigned int y = get_global_id(1);// y index
-	const unsigned int idx = x*sizeReconPic + y;
+	const unsigned int idx = y*sizeReconPic + x;
 	
 	int locSizex = get_local_size(0);
 	int locSizey = get_local_size(1);
@@ -76,13 +76,15 @@ kernel void OpenCL_BP(
 		
 		//interpolate
 		float y = s;
-		int y2 = floor(s); // lower s
-		int y1 = y2 + 1; // higher s			
-		float valR1 = sinogram[theta+y1*numberProj];
-		float valR2 = sinogram[theta+y2*numberProj];
-		float value = ((y2-y)/(y2-y1))*valR1 + ((y-y1)/(y2-y1))*valR2;
-				
-		
+		float y2 = floor(s); // lower s
+		float y1 = y2 + 1.f; // higher s			
+
+		float value = 0.f;
+		if ((y2 >= 0.f) && (y2 <= 359.f) && (y1 >= 0.f) && (y1 <= 359.f)){ 
+			float valR1 = sinogram[theta+((int)y1)*numberProj];
+			float valR2 = sinogram[theta+((int)y2)*numberProj];
+			value = (y-y2)*valR1 + (y1-y)*valR2;
+		}
 		value = M_PI_F*value/numberProj;
 
 		pval += value;

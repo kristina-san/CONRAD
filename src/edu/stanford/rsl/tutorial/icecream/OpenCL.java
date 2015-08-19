@@ -9,6 +9,7 @@ import com.jogamp.opencl.CLImageFormat.ChannelOrder;
 import com.jogamp.opencl.CLImageFormat.ChannelType;
 import com.jogamp.opencl.CLMemory.Mem;
 
+import edu.stanford.rsl.conrad.data.numeric.Grid1DComplex;
 import edu.stanford.rsl.conrad.data.numeric.Grid2D;
 import edu.stanford.rsl.conrad.data.numeric.NumericPointwiseOperators;
 import edu.stanford.rsl.conrad.data.numeric.opencl.OpenCLGrid2D;
@@ -252,9 +253,16 @@ public class OpenCL {
 			e.printStackTrace();
 		}
 		r.setRamp(ramp);
-		Grid2D filteredSino = r.applyToolToImage(sinogramCL);
-		OpenCLGrid2D filteredSinoCL = new OpenCLGrid2D(filteredSino, context, device);
-		filteredSino.show("filtered sinogram");
+		//Grid2D filteredSino = r.applyToolToImage(sinogramCL);
+		PBP object = new PBP();
+		Grid1DComplex ramLak = object.fftrampFilter(detectorSpacing, sinogram);
+		ramLak.show("filter");
+		Grid2D filteredRamLak = object.filtering(sinogram, ramLak);
+		filteredRamLak.show("filteredRamLak");
+		OpenCLGrid2D filteredSinoCL = new OpenCLGrid2D(filteredRamLak, context, device);
+		filteredSinoCL.show("filtered");
+		//OpenCLGrid2D filteredSinoCL = new OpenCLGrid2D(ramLaksinogramCL, context, device);
+		//filteredSino.show("filtered sinogram");
 		
 		
 		Grid2D backprojection = new Grid2D(size, size);
@@ -265,13 +273,6 @@ public class OpenCL {
 		long endtime= System.nanoTime();
 		
 		System.out.println("Time on GPU for PBP " + (endtime - starttime)/1000);		
-		
 
 	}
 }
-
-
-//1. Aufaddieren hinbekommen
-//2. Backprojection fixen
-//3. Statt int interpolieren billinear
-//4. filtern reco und nix verschmiertes
