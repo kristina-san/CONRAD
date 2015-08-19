@@ -132,6 +132,7 @@ public class PBP {
 		Grid2D reconstructed = object.backProjection(360, detectorSpacing, (int) ((int) d/detectorSpacing), sinogram, size, pixelSpacingRecon);		
 		Grid2D reconstructedFilter = object.backProjection(360, detectorSpacing, (int) ((int) d/detectorSpacing), filtered, size, pixelSpacingRecon);
 		Grid2D reconstructedFilterRamLak = object.backProjection(360, detectorSpacing, (int) ((int) d/detectorSpacing), filteredRamLak, size, pixelSpacingRecon);
+		reconstructedFilterRamLak.show("reconstructed with ramlak");
 		
 	}
 }
