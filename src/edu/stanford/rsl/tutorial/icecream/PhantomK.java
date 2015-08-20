@@ -85,7 +85,7 @@ public class PhantomK extends Grid2D {
 		float delta;
 		if(mode)
 			//delta = (float) ((Math.PI + fanAngle)/numberProj);
-			numberProj = (int) ((Math.PI+fanAngle)*180/Math.PI/rotAngle);
+			numberProj = (int) Math.ceil((Math.PI+fanAngle)*180/Math.PI/rotAngle)+1;
 		//else
 			//delta = (float) ((2*Math.PI)/numberProj);
 			//numberProj = (int) ((Math.PI+fanAngle)*180/Math.PI);
@@ -102,9 +102,9 @@ public class PhantomK extends Grid2D {
 			
 			for (int detPixel = 0; detPixel < numberDetPixel; detPixel++) {
 				
-				float tMax = numberDetPixel * detectorSpacing;
+				float tMax = (numberDetPixel-1) * detectorSpacing;
 				double xdet = sourcePos[0] + dSD;
-				double ydet = sourcePos[1] - tMax / 2 + detPixel* detectorSpacing;
+				double ydet = sourcePos[1] - (tMax/2) + detPixel* detectorSpacing;
 				//float tAngle = (float) Math.atan(ydet/dSD);
 				
 				double xspacePhantom = this.getSpacing()[0] / 2;
@@ -171,7 +171,7 @@ public class PhantomK extends Grid2D {
 				
 				double thetaInterval = (2 * Math.PI / (numberProj));
 				double theta = thetaInterval*iTheta;
-				double gamma=Math.atan2(dSD, t);
+				double gamma=Math.PI/2-Math.atan(t/dSD);
 				double beta=theta-gamma;
 				
 //				double alpha = (2 * Math.PI / (numberProj)) * theta;
@@ -207,51 +207,46 @@ public class PhantomK extends Grid2D {
 		//	t1 = − t2
 		//	beta2 = beta1 − 2*t1 + Math.PI
 		
-		Grid2D sinogram = new Grid2D(360, fanogram.getWidth()); // same sized fano and sinogram
-		float numberProj = (float) ((Math.PI+fanAngle)*180/Math.PI/rotAngle);
-		float numberDetPixel = fanogram.getWidth();
-		
+		Grid2D sinogram = new Grid2D(360, fanogram.getWidth());
 		for (int s = 0; s < sinogram.getHeight(); s++) {
 			for (int iTheta = 0; iTheta < sinogram.getWidth(); iTheta++) {
 				double smm=s*detectorSpacing - ((sinogram.getHeight()-1)*detectorSpacing/2);
 				double t= smm*dSD/(Math.sqrt(dSD*dSD-smm*smm));
 				
 				//double thetaInterval = (2 * Math.PI / (numberProj));
-				double thetaInterval = (Math.PI + fanAngle)/numberProj;
+				double thetaInterval = (2*Math.PI)/sinogram.getWidth();
 				double theta = thetaInterval*iTheta;
-				double gamma=Math.atan2(dSD, t);
+				double gamma=Math.PI/2-Math.atan(t/dSD);
 				double beta=theta-gamma;
 
-				double maxAngle = Math.PI + fanAngle;
-				double delta_B = maxAngle/numberProj;
+				double maxAngle = (Math.PI + fanAngle);
 
 				if (beta<0){
-					beta = beta + (numberProj-1)*thetaInterval;
-					t = -t;
-				}
-
-				
-				if(beta > maxAngle )
-				{
-					beta = beta + Math.PI - 2*gamma;
-					t = -t;
-				}
-				
-				if(beta < -maxAngle )
-				{
-					beta = beta + Math.PI - 2*gamma;
-					t = -t;					
+					beta = beta + 2*Math.PI;
 				}
 				
 				if (beta > 2*Math.PI){
-					beta = beta - (numberProj-1)*thetaInterval;
-				}			
-
+					beta = beta - 2*Math.PI;
+				}
+	
+				if(beta > maxAngle)
+				{
+					beta = beta + Math.PI - 2*Math.atan(t/dSD);
+					t = -t;
+				}
+				
+				if (beta<0){
+					beta = beta + 2*Math.PI;
+				}
+				
+				if (beta > 2*Math.PI){
+					beta = beta - 2*Math.PI;
+				}
 				
 				double tIndex = t/detectorSpacing + (fanogram.getWidth()-1)/2;
 				double betaIndex = beta/(rotAngle*Math.PI/180);
-				if(tIndex>362)
-					tIndex=361;
+				
+				//System.out.println("s = " + s + " iTheta = " + iTheta + " beta =" + beta + " t = " + t +  " betaIndex = " + betaIndex + " tIndex = " + tIndex);
 				sinogram.addAtIndex(iTheta, s, InterpolationOperators.interpolateLinear(fanogram, tIndex, betaIndex));
 			}
 		}
@@ -259,52 +254,8 @@ public class PhantomK extends Grid2D {
 		sinogram.show("rebin short scan");
 		return sinogram;
 	}	
-	
-	   Grid2D rebinFanogram(Grid2D fanogram, boolean mode, float fanAngle, float numberProj, float dSD, float numberDetPixel, float detectorSpacing){
-	    	Grid2D sino = new Grid2D(fanogram.getSize()[0],fanogram.getSize()[1]);
-	    	sino.setSpacing(fanogram.getSpacing()[0],fanogram.getSpacing()[1]);    	
-	    	double delta_B,delta_T,maxAngle = Math.PI;    	
-	    	if (mode){
-	    		maxAngle = Math.PI+fanAngle;
-	    		delta_B = (maxAngle)/numberProj;
-	    		delta_T = Math.PI/numberProj;
-	    		}
-	        else{
-	        	delta_B = (2*Math.PI)/numberProj;
-	        	delta_T = delta_B;
-	        	}
-	    	double beta;
-	    	for (int a = 0;a<numberProj;a++){
-	    		double theta = delta_T * a;    		
-	    		for (int i = 0;i<numberDetPixel;i++){    			
-	    			double s_para = detectorSpacing * i - (numberDetPixel * detectorSpacing)/2;    	//or spacing		
-	    			//double t = (D+dD)*Math.tan(Math.asin(s_para/(D+dD)));
-	    			double aux = Math.pow(s_para, 2)/Math.pow(dSD, 2);
-	    			double t = s_para/Math.sqrt(1 - aux);
-	    			double gamma = Math.atan2(t, dSD);    			
-	    			beta = theta - gamma;    		
-	    			if (mode){
-	    				if (beta > (maxAngle-delta_B)){
-	    					beta = beta - Math.PI-delta_B;
-	    				}
-	    				if (beta < 0){
-	    					beta = beta + Math.PI-delta_B;
-	    					t = -t;}}
-	    			else{
-	    				if (beta > (2*Math.PI-delta_B)){
-	    					beta = beta - ((2*Math.PI)-delta_B);}
-	    				if (beta < 0){
-	    					beta = beta + ((2*Math.PI)-delta_B);}}    			
-	    			float idt = (float) ((t + (numberDetPixel * detectorSpacing)/2.0)/detectorSpacing);
-	    			float idB = (float) (beta/delta_B);
-	    			//if (idt>=0 && idt <= (detectorPixel - 1) && idB >= 0 && idB <= (projectionNumber - 1)){
-	    				sino.setAtIndex(i, a, InterpolationOperators.interpolateLinear(fanogram, idt, idB));    				
-	    			//}
-	    			//else{continue;}
-	    		}
-	    	}    	
-	    	return sino;
-	    }	
+
+	   
 	public static void main(String[] args) {
 		new ImageJ();
 		int size = 256;
@@ -319,15 +270,12 @@ public class PhantomK extends Grid2D {
 
 		float d = (float) (Math.sqrt(2) * p.getHeight() * p.getSpacing()[0]);
 		float detectorSpacing = (float) 0.2;
-//		float dSI = d/5;
-//		float dSD = d/2;
 		float dSI = 3*d;
 		float dSD = 6*d;
 		float detNew = 2*(d*dSD)/(2*dSI);
 		int numberProj = 360;
 		int rotAngleSpacing = 1;
-		p.createSinogram(180, detectorSpacing, (int)(d/detectorSpacing), d/2 );
-		// p.createSinogram(180, (float)1.2, 500, d);
+		Grid2D sino = p.createSinogram(180, detectorSpacing, (int)(d/detectorSpacing), d/2 );
 		Grid2D fanogram  = p.createFanogram(false, numberProj, detectorSpacing, (int) (detNew / detectorSpacing), dSD, rotAngleSpacing, dSI, 0);
 		fanogram.show("fanogram");
 		Grid2D sinoFromFano  = p.rebinning(fanogram, dSI, dSD, rotAngleSpacing, detectorSpacing);
@@ -340,12 +288,13 @@ public class PhantomK extends Grid2D {
 		float [] pixelSpacingRecon = {(float) 0.2, (float) 0.2};
 		Grid1DComplex ramp = projection.fftrampFilter(detectorSpacing, sinoFromFano);
 		Grid2D filteredRamLak = projection.filtering(sinoFromFano, ramp);
+		filteredRamLak.show();
 		Grid2D reconstructedFilterRamLak = projection.backProjection(360, detectorSpacing, sinoFromFano.getHeight(), filteredRamLak, size, pixelSpacingRecon);
 
 		// Ex 3.4 Short scan
 		int numberDetPixel = (int) (detNew / detectorSpacing);
 		float detectorLength = numberDetPixel * detectorSpacing;
-		float fanAngle = (float) (2.0 * Math.atan2(detectorLength/2, dSI));
+		float fanAngle = (float) (2.0 * Math.atan2((detectorLength-1)/2, dSD));
 		
 		Grid2D shortFanogram  = p.createFanogram(true, numberProj, detectorSpacing, (int) (detNew / detectorSpacing), dSD, rotAngleSpacing, dSI, fanAngle);
 		shortFanogram.show("shortfanogram");
@@ -357,11 +306,8 @@ public class PhantomK extends Grid2D {
 		
 		Grid1DComplex rampShort = projection.fftrampFilter(detectorSpacing, sinoFromShortFan);
 		Grid2D filteredRampShort = projection.filtering(sinoFromShortFan, rampShort);
-		//filteredRampShort.show("filtered short sino");
+		filteredRampShort.show("filtered short sino");
 		Grid2D reconstructedFilterRamLakShort = projection.backProjection(360, detectorSpacing, sinoFromShortFan.getHeight(), filteredRampShort, size, pixelSpacingRecon);
-		
-		Grid2D g = p.rebinFanogram(sinoFromShortFan, true, fanAngle, numberProj, dSD, numberDetPixel, detectorSpacing);
-		g.show();
 	}
 
 }
