@@ -1,8 +1,16 @@
 package edu.stanford.rsl.tutorial.icecream;
 
-import java.util.Arrays;
+import ij.ImageJ;
 
-import mpicbg.imglib.type.numeric.integer.UnsignedIntType;
+import java.util.Arrays;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+import edu.stanford.rsl.conrad.data.numeric.Grid3D;
 
 public class cavarev_evaluation {
 
@@ -13,17 +21,8 @@ public class cavarev_evaluation {
 		return iNum;
 	}
 	
-	// Simple structure holding the information of a 3-D reconstruction 
-	public class Reco3D
-	{
-		char[]	volume;					///< memory for the 3-D reconstruction
-		float[]	origin = new float[3];	///< first voxel coordinate in world coordinate system [mm] -> isocenter: (0,0,0)
-		int[]	size = new int[3];		///< side lengths of the reconstruction in voxels
-		float voxelSize;				///< voxel side length in [mm]
-	};
-	
 	public static void main(String[] args) throws Exception {
-		
+		new ImageJ();
 		//calling parameters
 		// 0: evaluation dataset
 		// 1: 3-D reconstruction to be evaluated
@@ -45,11 +44,55 @@ public class cavarev_evaluation {
 		// 1*float						1*4 bytes				voxel size in mm
 		// Sx0*Sx1*Sx2*unsigned char	Sx0*Sx1*Sx2*1 bytes		reconstructed volume in row-major format
 		
-		Reco3D reco = null;
+		Reco3D reco = new Reco3D();
 
 		/*
 		 * TODO: Auslesen aus Binary File f_reco
 		 */
+		Grid3D g = null;
+		try {
+			FileInputStream fStream = new FileInputStream(f_reco);
+			// Number of matrices is given as the total size of the file
+			// divided by 4 bytes per float, divided by 12 floats per projection matrix
+			DataInputStream in = new DataInputStream(fStream);
+		
+			byte[] buffer = new byte[4];
+			in.read(buffer);
+			reco.origin[0] = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+			in.read(buffer);
+			reco.origin[1] = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+			in.read(buffer);
+			reco.origin[2] = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+			in.read(buffer);
+			reco.size[0] = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt(); //unsigned?
+			in.read(buffer);
+			reco.size[1] = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt();
+			in.read(buffer);
+			reco.size[2] = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt();
+			in.read(buffer);
+			reco.voxelSize = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+			g = new Grid3D(reco.size[0], reco.size[1], reco.size[2]);
+			g.setSpacing(reco.voxelSize, reco.voxelSize, reco.voxelSize);
+			g.setOrigin(reco.origin);
+			buffer = new byte[1];
+			for(int z = 0; z < reco.size[2]; z++){
+				for(int y = 0; y < reco.size[1]; y++){
+					for(int x = 0; x < reco.size[0]; x++){
+						float val = 0;
+						in.read(buffer);
+						val = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).get()  & 0xFF;;
+						g.setAtIndex(x, y, z, val);
+					}
+				}
+			}	
+			in.close();
+			fStream.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		g.show();
 		
 		// fixed data properties for cavarev
 		int N = 133; // number of projection images //const?
@@ -95,7 +138,7 @@ public class cavarev_evaluation {
 			 */
 
 			//std::memset(refVolume, 0, rnumel*sizeof(unsigned char));
-			Arrays.fill(refVolume, 0, rnumel*sizeof(unsigned char), 0);
+			//TODO: Arrays.fill(refVolume, 0, rnumel*sizeof(unsigned char), 0);
 
 			for (int v=0; v<num_border; v++) //unsigned
 				refVolume[vec_border[v]] = (char) -1;
@@ -110,15 +153,15 @@ public class cavarev_evaluation {
 			for (int iz=0; iz<rszSlices; iz++)
 			{
 				float rz = (float)iz*rszVoxel+roz;
-				int idx_z = round(1.0f/reco.voxelSize*(rz-reco.origin[2]));
+				int idx_z = 0; //TODO: round(1.0f/reco.voxelSize*(rz-reco.origin[2]));
 				for (int iy=0; iy<rszMatrix; iy++)
 				{
 					float ry = (float)iy*rszVoxel+roy;
-					int idx_y = round(1.0f/reco.voxelSize*(ry-reco.origin[1]));
+					int idx_y = 0; //TODO: round(1.0f/reco.voxelSize*(ry-reco.origin[1]));
 					for (int ix=0; ix<rszMatrix; ix++)
 					{
 						float rx = (float)ix*rszVoxel+rox;
-						int idx_x = round(1.0f/reco.voxelSize*(rx-reco.origin[0]));
+						int idx_x = 0; //TODO: round(1.0f/reco.voxelSize*(rx-reco.origin[0]));
 
 						int vidx = iz*rszMatrix*rszMatrix+iy*rszMatrix+ix; //unsigned?
 						
