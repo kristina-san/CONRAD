@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -14,15 +15,17 @@ import edu.stanford.rsl.conrad.data.numeric.Grid3D;
 
 public class cavarev_evaluation {
 
-	public static int round(float num)	//evtl mit generic loesen
+	public static int round(double d)	//evtl mit generic loesen
 	{
 		//static_cast<T>((num>0.0f) ? num+0.5f : num-0.5f);
-		int iNum = (int)((num > 0.0f) ? num+0.5f : num-0.5f);
+		int iNum = (int)((d > 0.0f) ? d+0.5f : d-0.5f);
 		return iNum;
 	}
 	
 	public static void main(String[] args) throws Exception {
 		new ImageJ();
+		String file = "/home/cip/medtech2014/ow53uvul/Desktop/result.txt";
+		FileWriter writer = new FileWriter(file); 
 		//calling parameters
 		// 0: evaluation dataset
 		// 1: 3-D reconstruction to be evaluated
@@ -75,7 +78,14 @@ public class cavarev_evaluation {
 			g.setSpacing(reco.voxelSize, reco.voxelSize, reco.voxelSize);
 			g.setOrigin(reco.origin);
 			buffer = new byte[1];
-			for(int z = 0; z < reco.size[2]; z++){
+			int numelvol = reco.size[0]*reco.size[1]*reco.size[2];
+			reco.volume = new char[numelvol];
+			for(int i = 0; i < numelvol; i++) {
+				in.read(buffer);
+				reco.volume[i] = (char) ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).get();				
+			}
+
+			/*for(int z = 0; z < reco.size[2]; z++){
 				for(int y = 0; y < reco.size[1]; y++){
 					for(int x = 0; x < reco.size[0]; x++){
 						float val = 0;
@@ -84,7 +94,7 @@ public class cavarev_evaluation {
 						g.setAtIndex(x, y, z, val);
 					}
 				}
-			}	
+			}*/	
 			in.close();
 			fStream.close();
 		} catch (FileNotFoundException e) {
@@ -92,7 +102,7 @@ public class cavarev_evaluation {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		g.show();
+		//g.show();
 		
 		// fixed data properties for cavarev
 		int N = 133; // number of projection images //const?
@@ -116,9 +126,13 @@ public class cavarev_evaluation {
 		float rox = -0.5f*rszVoxel*((float)(rszMatrix)-1.0f) + ox;
 		
 		/*
-		 * TODO: Auslesen aus Binary File f_evdb ifsevdb
+		 * TODO: Auslesen aus Binary File f_evdb ifsevdb		evtl mit try!
+		 * std::ifstream ifsevdb(f_evdb.c_str(), std::ifstream::binary);
 		 */
-
+		FileInputStream fStream = new FileInputStream(f_evdb);
+		DataInputStream in = new DataInputStream(fStream);
+		byte[] buffer = new byte[4];
+		
 		for (int i=0; i<N; i++)
 		{
 			//std::memset(dsc_same, 0, Q*sizeof(unsigned int));
@@ -129,23 +143,46 @@ public class cavarev_evaluation {
 			int num_border = 0, num_vessel = 0; // unsigned?
 			/*
 			 * TODO: read from ifsevdb
+			 * 		ifsevdb.read((char*)(&num_border), sizeof(unsigned int));
+					ifsevdb.read((char*)(&num_vessel), sizeof(unsigned int));
+					if (ifsevdb.fail())
+					{
+						cout << "failed to read from evaluation database" << endl;
+						return 1;
+					}
 			 */
+
+			in.read(buffer);
+			num_border = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt(); //unsigned?
+			in.read(buffer);
+			num_vessel = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt();
 			
 			int[] vec_border = new int[num_border]; //unsigned?
 			int[] vec_vessel = new int[num_vessel]; //unsigned?
 			/*
 			 * TODO: read from ifsevdb
+			 * 		ifsevdb.read((char*)(vec_border), num_border*sizeof(unsigned int));
+					ifsevdb.read((char*)(vec_vessel), num_vessel*sizeof(unsigned int));
 			 */
-
+			for(int n = 0; n < num_border; n++){
+				in.read(buffer);
+				vec_border[n] = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt();
+			}
+			for(int n = 0; n < num_vessel; n++) {
+				in.read(buffer);
+				vec_vessel[n] = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt();				
+			}
 			//std::memset(refVolume, 0, rnumel*sizeof(unsigned char));
-			//TODO: Arrays.fill(refVolume, 0, rnumel*sizeof(unsigned char), 0);
+			Arrays.fill(refVolume, 0, rnumel, (char)0);
 
 			for (int v=0; v<num_border; v++) //unsigned
 				refVolume[vec_border[v]] = (char) -1;
 
 			for (int v=0; v<num_vessel; v++)
 				refVolume[vec_vessel[v]] = 1;
-
+			
+			in.close();
+			fStream.close();
 			/*
 			 * TODO: evtl delete [] vec_border and [] vec_vessel
 			 */
@@ -153,15 +190,15 @@ public class cavarev_evaluation {
 			for (int iz=0; iz<rszSlices; iz++)
 			{
 				float rz = (float)iz*rszVoxel+roz;
-				int idx_z = 0; //TODO: round(1.0f/reco.voxelSize*(rz-reco.origin[2]));
+				int idx_z = round(1.0f/reco.voxelSize*(rz-reco.origin[2])); //TODO: round(1.0f/reco.voxelSize*(rz-reco.origin[2]));
 				for (int iy=0; iy<rszMatrix; iy++)
 				{
 					float ry = (float)iy*rszVoxel+roy;
-					int idx_y = 0; //TODO: round(1.0f/reco.voxelSize*(ry-reco.origin[1]));
+					int idx_y = round(1.0f/reco.voxelSize*(ry-reco.origin[1])); //TODO: round(1.0f/reco.voxelSize*(ry-reco.origin[1]));
 					for (int ix=0; ix<rszMatrix; ix++)
 					{
 						float rx = (float)ix*rszVoxel+rox;
-						int idx_x = 0; //TODO: round(1.0f/reco.voxelSize*(rx-reco.origin[0]));
+						int idx_x = round(1.0f/reco.voxelSize*(rx-reco.origin[0])); //TODO: round(1.0f/reco.voxelSize*(rx-reco.origin[0]));
 
 						int vidx = iz*rszMatrix*rszMatrix+iy*rszMatrix+ix; //unsigned?
 						
@@ -197,17 +234,20 @@ public class cavarev_evaluation {
 
 			for (int q=0; q<Q; q++)
 			{
-				System.out.println((2.0f * (float)(dsc_same[q]) / (float)dsc_sum[q]));
+				float val = (2.0f * (float)(dsc_same[q]) / (float)dsc_sum[q]);
+				System.out.println(val);
+				writer.write(val + " "); 
 			}
 			System.out.println();
+
 		}
-			
+		
 		// TODO: evtl. cleanup
 		//delete [] reco.volume;
 		//delete [] refVolume;
 		//delete [] dsc_same;
 		//delete [] dsc_sum;
-		
+		writer.close();			
 	}
 
 }
