@@ -23,6 +23,7 @@ public class cavarev_evaluation {
 	}
 	
 	public static void main(String[] args) throws Exception {
+		long startTime = System.currentTimeMillis();
 		new ImageJ();
 		String file = "/home/cip/medtech2014/ow53uvul/Desktop/result.txt";
 		FileWriter writer = new FileWriter(file); 
@@ -35,6 +36,7 @@ public class cavarev_evaluation {
 			System.out.println("Wrong calling syntax.\n\n" 
 			 + "   first argument: path to the evaluation database\n" 
 			 + "   second argument: path to the 3-D reconstruction to be evaluated\n");
+			System.exit(0);
 		}
 		
 		// collect the input data from the command line
@@ -52,7 +54,7 @@ public class cavarev_evaluation {
 		/*
 		 * TODO: Auslesen aus Binary File f_reco
 		 */
-		Grid3D g = null;
+		//Grid3D g = null;
 		try {
 			FileInputStream fStream = new FileInputStream(f_reco);
 			// Number of matrices is given as the total size of the file
@@ -74,15 +76,16 @@ public class cavarev_evaluation {
 			reco.size[2] = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt();
 			in.read(buffer);
 			reco.voxelSize = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-			g = new Grid3D(reco.size[0], reco.size[1], reco.size[2]);
-			g.setSpacing(reco.voxelSize, reco.voxelSize, reco.voxelSize);
-			g.setOrigin(reco.origin);
+			//g = new Grid3D(reco.size[0], reco.size[1], reco.size[2]);
+			//g.setSpacing(reco.voxelSize, reco.voxelSize, reco.voxelSize);
+			//g.setOrigin(reco.origin);
 			buffer = new byte[1];
 			int numelvol = reco.size[0]*reco.size[1]*reco.size[2];
 			reco.volume = new char[numelvol];
 			for(int i = 0; i < numelvol; i++) {
 				in.read(buffer);
-				reco.volume[i] = (char) ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).get();				
+				reco.volume[i] = (char) ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).get();
+				//reco.volume[1] = (Character) null;
 			}
 
 			/*for(int z = 0; z < reco.size[2]; z++){
@@ -176,13 +179,12 @@ public class cavarev_evaluation {
 			Arrays.fill(refVolume, 0, rnumel, (char)0);
 
 			for (int v=0; v<num_border; v++) //unsigned
-				refVolume[vec_border[v]] = (char) -1;
+				refVolume[vec_border[v]] = (char)-1;
 
 			for (int v=0; v<num_vessel; v++)
 				refVolume[vec_vessel[v]] = 1;
 			
-			in.close();
-			fStream.close();
+
 			/*
 			 * TODO: evtl delete [] vec_border and [] vec_vessel
 			 */
@@ -205,7 +207,7 @@ public class cavarev_evaluation {
 						if (refVolume[vidx]==0)
 							continue;
 						
-						boolean val1 = refVolume[vidx]>0;
+						boolean val1 = (float)refVolume[vidx]<65535; //-1 wird nicht richtig wiedergegeben
 						
 						char cval2 = 0; //unsigned?
 
@@ -241,13 +243,18 @@ public class cavarev_evaluation {
 			System.out.println();
 
 		}
-		
+		in.close();
+		fStream.close();
 		// TODO: evtl. cleanup
 		//delete [] reco.volume;
 		//delete [] refVolume;
 		//delete [] dsc_same;
 		//delete [] dsc_sum;
-		writer.close();			
+		writer.close();
+		
+		long stopTime = System.currentTimeMillis();
+	    long elapsedTime = stopTime - startTime;
+	    System.out.println("Execution time: " + elapsedTime/1000);
 	}
 
 }
