@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -36,10 +35,6 @@ public class CavarevEvaluation {
 	}
 	
 	public void run() throws Exception {
-		long startTime = System.currentTimeMillis();
-		
-		//String file = "/home/cip/medtech2014/ow53uvul/Desktop/result.txt";
-		//FileWriter writer = new FileWriter(file);
 		
 		//calling parameters
 		// 0: evaluation dataset
@@ -204,7 +199,6 @@ public class CavarevEvaluation {
 			{
 				float dice = (2.0f * (float)(dsc_same[q]) / (float)dsc_sum[q]);
 				System.out.println(dice + " ");
-				//writer.write(dice + " "); 
 				if(dice > max) {
 					max = dice;
 					frame = i;
@@ -215,13 +209,7 @@ public class CavarevEvaluation {
 		}
 		in.close();
 		fStream.close();
-		//writer.close();
 		
 		System.out.println("Max. dice coefficient: " + max + " at frame " + frame + ".");
-		
-		long stopTime = System.currentTimeMillis();
-	    long elapsedTime = stopTime - startTime;
-	    System.out.println("Execution time: " + elapsedTime/1000);
 	}
-
 }
