@@ -9,14 +9,33 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-public class cavarev_evaluation {
+import edu.stanford.rsl.conrad.utils.Configuration;
 
+public class CavarevEvaluation {
+
+	private String filename = "";
+	private String evaluationFile = "";
+	
 	public static int round(double d) {
 		int iNum = (int)((d > 0.0f) ? d+0.5f : d-0.5f);
 		return iNum;
 	}
 	
-	public static void main(String[] args) throws Exception {
+	public CavarevEvaluation(String evaluationFile, boolean hasRespiratoryMotion)
+	{
+		if(Configuration.getGlobalConfiguration() == null){
+			Configuration.loadConfiguration();
+		}
+		if(hasRespiratoryMotion){
+			this.filename = Configuration.getGlobalConfiguration().getRegistry().get("CAVAREV_DIRECTORY") + "/cavarev_cardbreath.bin";
+		}else{
+			this.filename = Configuration.getGlobalConfiguration().getRegistry().get("CAVAREV_DIRECTORY") + "/cavarev_card.bin";
+			System.out.println(this.filename);
+		}
+		this.evaluationFile = evaluationFile;
+	}
+	
+	public void run() throws Exception {
 		long startTime = System.currentTimeMillis();
 		
 		//String file = "/home/cip/medtech2014/ow53uvul/Desktop/result.txt";
@@ -26,17 +45,9 @@ public class cavarev_evaluation {
 		// 0: evaluation dataset
 		// 1: 3-D reconstruction to be evaluated
 				
-		if (args.length != 2) 
-		{
-			System.out.println("Wrong calling syntax.\n\n" 
-			 + "   first argument: path to the evaluation database\n" 
-			 + "   second argument: path to the 3-D reconstruction to be evaluated\n");
-			System.exit(0);
-		}
-		
-		// collect the input data from the command line
-		String f_evdb = args[0];
-		String f_reco = args[1];		
+		// collect the input data
+		String f_evdb = filename;
+		String f_reco = evaluationFile;		
 
 		////// read the volume in the CAVAREV 1.0 format. All data is expected in little-endian format.
 		// 3*float						3*4 bytes				first voxel x=(x0,x1,x2) origin in world coordinates
