@@ -29,20 +29,15 @@ public class CavarevEvaluation {
 			this.filename = Configuration.getGlobalConfiguration().getRegistry().get("CAVAREV_DIRECTORY") + "/cavarev_cardbreath.bin";
 		}else{
 			this.filename = Configuration.getGlobalConfiguration().getRegistry().get("CAVAREV_DIRECTORY") + "/cavarev_card.bin";
-			System.out.println(this.filename);
 		}
 		this.evaluationFile = evaluationFile;
 	}
 	
 	public void run() throws Exception {
-		
-		//calling parameters
-		// 0: evaluation dataset
-		// 1: 3-D reconstruction to be evaluated
-				
+					
 		// collect the input data
-		String f_evdb = filename;
-		String f_reco = evaluationFile;		
+		String f_evdb = filename;	// evaluation dataset
+		String f_reco = evaluationFile;		// 3-D reconstruction to be evaluated
 
 		////// read the volume in the CAVAREV 1.0 format. All data is expected in little-endian format.
 		// 3*float						3*4 bytes				first voxel x=(x0,x1,x2) origin in world coordinates
@@ -101,7 +96,7 @@ public class CavarevEvaluation {
 		float rszVoxel = 0.5f;
 		
 		int rnumel=rszMatrix*rszMatrix*rszSlices;
-		char[] refVolume = new char[rnumel];
+		int[] refVolume = new int[rnumel];
 		int Q=256;
 		int[] dsc_same = new int[Q];
 		int[] dsc_sum = new int[Q];
@@ -141,10 +136,10 @@ public class CavarevEvaluation {
 				vec_vessel[n] = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt();				
 			}
 
-			Arrays.fill(refVolume, 0, rnumel, (char)0);
+			Arrays.fill(refVolume, 0, rnumel, 0);
 
 			for (int v=0; v<num_border; v++)
-				refVolume[vec_border[v]] = (char)-1;
+				refVolume[vec_border[v]] = -1;
 
 			for (int v=0; v<num_vessel; v++)
 				refVolume[vec_vessel[v]] = 1;
@@ -167,7 +162,7 @@ public class CavarevEvaluation {
 						if (refVolume[vidx]==0)
 							continue;
 						
-						boolean val1 = (float)refVolume[vidx]<65535; //-1 wird nicht richtig wiedergegeben
+						boolean val1 = refVolume[vidx]>0;
 						
 						char cval2 = 0;
 
