@@ -279,6 +279,13 @@ public abstract class RegKeys {
 	 * @see edu.stanford.rsl.conrad.geometry.shapes.simple.Triangle
 	 */
 	public static final String PHANTOM_PROJECTOR_RAYTRACING_EPSILON = "PHANTOM_PROJECTOR_RAYTRACING_EPSILON";
+	
+	/**
+	 * Entry to define the cavarev directory with the file which contains the card or cardbreath information.
+	 * The <b>value</b> is a <b>String</b> indicating a directory location, e.g. "d:\data\cavarev".
+	 * 
+	 */
+	public static final String CAVAREV_DIRECTORY = "CAVAREV_DIRECTORY";
 		
 	public static final HashMap<String,String> defaultValues;
 
