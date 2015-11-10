@@ -33,7 +33,7 @@ public class CavarevEvaluation {
 		this.evaluationFile = evaluationFile;
 	}
 	
-	public void run() throws Exception {
+	public String run() throws Exception {
 					
 		// collect the input data
 		String f_evdb = filename;	// evaluation dataset
@@ -205,6 +205,8 @@ public class CavarevEvaluation {
 		in.close();
 		fStream.close();
 		
-		System.out.println("Max. dice coefficient: " + max + " at frame " + frame + ".");
+		String finalString = "Max. dice coefficient: " + max + " at frame " + frame + ".";
+		System.out.println(finalString);
+		return finalString;
 	}
 }

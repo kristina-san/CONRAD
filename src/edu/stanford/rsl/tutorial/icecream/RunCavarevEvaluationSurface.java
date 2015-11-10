@@ -1,5 +1,7 @@
 package edu.stanford.rsl.tutorial.icecream;
 
+import ij.gui.GenericDialog;
+
 import java.awt.Checkbox;
 import java.awt.CheckboxGroup;
 import java.awt.event.ActionEvent;
