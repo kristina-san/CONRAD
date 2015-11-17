@@ -39,10 +39,10 @@ public class RunCavarevEvaluationSurface extends JFrame implements ActionListene
 		this.setSize(500,200);
 		panel = new JPanel();
 		
-		label0 = new JLabel("Please insert the path to your file");
+		label0 = new JLabel("File path:");
 		label = new JLabel();
 		
-		txt = new JTextField(10);
+		txt = new JTextField(25);
 		
 		button = new JButton("Open file");
 		button.addActionListener(this);
@@ -63,6 +63,7 @@ public class RunCavarevEvaluationSurface extends JFrame implements ActionListene
 		panel.add(cardBreath);
 		
 		panel.add(label);
+		
 		panel.add(button1);
 		
 		this.add(panel);

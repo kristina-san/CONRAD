@@ -34,7 +34,7 @@ public class CavarevEvaluation {
 	}
 	
 	public String run() throws Exception {
-					
+		
 		// collect the input data
 		String f_evdb = filename;	// evaluation dataset
 		String f_reco = evaluationFile;		// 3-D reconstruction to be evaluated
@@ -80,8 +80,10 @@ public class CavarevEvaluation {
 			fStream.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
+			return "An error with your file occured.";
 		} catch (IOException e) {
 			e.printStackTrace();
+			return "An error with your file occured.";
 		}
 		
 		// fixed data properties for cavarev
