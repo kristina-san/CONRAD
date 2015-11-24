@@ -48,6 +48,7 @@ public class CavarevEvaluation {
 		Reco3D reco = new Reco3D();
 
 		try {
+			// Read from the 3-D reconstruction that has to be evaluated
 			FileInputStream fStream = new FileInputStream(f_reco);
 			// Number of matrices is given as the total size of the file
 			// divided by 4 bytes per float, divided by 12 floats per projection matrix
@@ -87,7 +88,7 @@ public class CavarevEvaluation {
 		}
 		
 		// fixed data properties for cavarev
-		int N = 133; // number of projection images
+		int N = 133; // number of projection images (phases)
 
 		// begin the evaluation
 		float ox = -53.0f;
@@ -107,6 +108,7 @@ public class CavarevEvaluation {
 		float roy = -0.5f*rszVoxel*((float)(rszMatrix)-1.0f) + oy;
 		float rox = -0.5f*rszVoxel*((float)(rszMatrix)-1.0f) + ox;
 		
+		// Read from the evaluation dataset
 		FileInputStream fStream = new FileInputStream(f_evdb);
 		DataInputStream in = new DataInputStream(fStream);
 		byte[] buffer = new byte[4];
@@ -114,6 +116,7 @@ public class CavarevEvaluation {
 		float max = -1.0f;
 		int frame = -1;
 		
+		// Get over 133 phases
 		for (int i=0; i<N; i++)
 		{
 			Arrays.fill(dsc_same, 0,  Q, 0);
@@ -192,6 +195,7 @@ public class CavarevEvaluation {
 			}
 
 			System.out.println("Phase " + i + ": ");
+			// Evaluate over 256 thresholds
 			for (int q=0; q<Q; q++)
 			{
 				float dice = (2.0f * (float)(dsc_same[q]) / (float)dsc_sum[q]);
@@ -207,6 +211,7 @@ public class CavarevEvaluation {
 		in.close();
 		fStream.close();
 		
+		// Final output of the maximal dice coefficient at the frame number
 		String finalString = "Max. dice coefficient: " + max + " at frame " + frame + ".";
 		System.out.println(finalString);
 		return finalString;

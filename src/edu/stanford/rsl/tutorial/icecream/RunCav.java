@@ -8,83 +8,89 @@ import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-
-import javax.swing.JFileChooser;
-
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import ij.gui.GenericDialog;
 
-public class RunCav extends GenericDialog implements ActionListener {
+public class RunCav extends GenericDialog {
 	
-	private TextField tf;
-	private TextArea resultTextArea;
+	private TextField tf;				// text field for entering the path to the evaluation file
+	private TextArea resultTextArea;	// text area for error or output messages 
+	private String selection;			// get selection from RadioButton
 	
-	private String selection;
 	public RunCav(String title) {
 		super(title);
 	}
 
 	public void run() throws Exception {
 
-		Panel panel = new Panel();
-	    tf = new TextField("", 50);
-		Button button = new Button("open");
-	    button.addActionListener(new ActionListener() {
+		Panel topPanel = new Panel();
+	    tf = new TextField("", 50);	// text field for entering the path to the evaluation file
+		Button button_chooseFile = new Button("open");	// button that opens a JFileChooser so the evaluation file could be choosed
+		button_chooseFile.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
 	 			JFileChooser chooser = new JFileChooser();
-				chooser.showDialog(null, "Open");
-
-				int returnVal = 0;
+	 		    FileNameExtensionFilter filter = new FileNameExtensionFilter(
+	 		           "Binary files", "bin");	//show only bin files
+	 		    chooser.setFileFilter(filter);
+				int returnVal = chooser.showOpenDialog(getParent());
 				if(returnVal == JFileChooser.APPROVE_OPTION)
 				{
-					tf.setText(chooser.getSelectedFile().getPath());
+					tf.setText(chooser.getSelectedFile().getPath());	//show the path to the file in text field
 				}
 	         }
 	      });
-	    
+
 		Label label = new Label("Filepath: ");
-	    panel.add(label);
-	    panel.add(tf);
-	    panel.add(button, null, 2);
-	    this.addPanel(panel);
+		topPanel.add(label);
+		topPanel.add(tf);
+		topPanel.add(button_chooseFile, null, 2);
+	    this.addPanel(topPanel);	
 	    
+	    // Add radio buttons for choosing between cardbreath and card
 	    String[] labels = {"Cardbreath", "Card"};    
 	    this.addRadioButtonGroup("Please check", labels, 1, 1, labels[0]);
-	   	    
-	    resultTextArea = new TextArea();
+	   	
+	    Panel bottomPanel = new Panel();
+	    bottomPanel.add(Box.createHorizontalGlue());
+	    resultTextArea = new TextArea();	// text area for error or output messages 
 	    resultTextArea.setEditable(false);
-	    panel.add(resultTextArea);
+	    bottomPanel.add(resultTextArea);
 	    
+	    // after clicking on button "Run" the insert file path is checked 
+	    // and then the cavarev evaluation is started 
 	    Button run = new Button("Run");
 	    run.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	     	    String evaluationFile = tf.getText();
-	    	    selection = getTextRadioButton();
-	    	    
-	    	    boolean isOkay = check(evaluationFile, selection);
+	        	String evaluationFile = tf.getText();
+	    	    boolean isOkay = check(evaluationFile);
+
     	    	String evaluationString = "";
 	    	    if(isOkay)
 	    	    {
+		        	selection = getTextRadioButton();
 					try {
 						evaluationString = evaluate(evaluationFile, selection);
 					} catch (Exception e1) {
-						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
 					resultTextArea.setText("Finished evaluation.\n" + evaluationString);;
 	    	    }	        	 
 	         }
 	      });
-	    panel.add(run);
-	    
+	    bottomPanel.add(run);
+	    this.addPanel(bottomPanel);
 	    this.showDialog();
 	    if (this.wasCanceled()) return;
 	}
 	
+	//get the text from the radio button
 	public String getTextRadioButton() {
 		return this.getNextRadioButton();
 	}
 	
-	public boolean check(String evaluationFile, String selection) {
+	// check the insert file path isn't empty, if the file exists and if it's a binary file
+	public boolean check(String evaluationFile) {
 		if(evaluationFile.isEmpty()) {
 			resultTextArea.setText("You forgot the filepath. Please insert and try again.");
 			return false;
@@ -94,14 +100,20 @@ public class RunCav extends GenericDialog implements ActionListener {
 				resultTextArea.setText("The insert file doesn't exist. Please try again.");
 				return false;
 			}
-		}
+			else if (!evaluationFile.endsWith(".bin"))
+			{
+				resultTextArea.setText("The insert file isn't a binary file. Please try again.");
+				return false;
+			}
+		} 
 		return true;
 	}
 	
+	// start cavarev evaluation
 	public String evaluate(String evaluationFile, String selection) throws Exception {
 		CavarevEvaluation eval = null;
 		String evaluationString = "";
-		resultTextArea.setText("Started evaluation... \nPlease see console for more information.");
+		resultTextArea.setText("Started evaluation... \nProgram is running...\nPlease see console output for more information.");
     	switch (selection) {
 			case "Card":
 				eval = new CavarevEvaluation(evaluationFile, false);
